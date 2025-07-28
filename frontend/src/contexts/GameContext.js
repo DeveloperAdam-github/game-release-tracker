@@ -45,6 +45,16 @@ export const GameProvider = ({ children }) => {
     }
   }, [showFavoritesOnly, allGames, isUpcomingMode]);
 
+  // Apply favorites filter to current games
+  const applyFavoritesFilter = () => {
+    if (showFavoritesOnly) {
+      const favoriteGames = allGames.filter(game => game.is_favorite);
+      setGames(favoriteGames);
+    } else {
+      setGames(allGames);
+    }
+  };
+
   const loadGames = async () => {
     try {
       setLoading(true);
@@ -52,7 +62,9 @@ export const GameProvider = ({ children }) => {
       setIsUpcomingMode(false); // Switch out of upcoming mode
       
       const gameData = await gameAPI.getGames(filters);
-      setGames(gameData || []);
+      const games = gameData || [];
+      setAllGames(games);
+      setGames(games);
     } catch (err) {
       setError('Failed to load games. Please try again.');
       console.error('Error loading games:', err);
@@ -61,14 +73,29 @@ export const GameProvider = ({ children }) => {
     }
   };
 
-  const loadUpcomingGames = async (daysAhead = 365) => {
+  const loadUpcomingGames = async (year = '2025') => {
     try {
       setLoading(true);
       setError(null);
-      setIsUpcomingMode(true); // Set upcoming mode
+      setIsUpcomingMode(true);
+      setYearFilter(year);
+      
+      // Calculate date range based on year
+      const startDate = year === 'both' ? '2025-01-01' : `${year}-01-01`;
+      const endDate = year === 'both' ? '2026-12-31' : `${year}-12-31`;
+      const daysAhead = year === 'both' ? 730 : 365;
       
       const gameData = await gameAPI.getUpcomingGames(daysAhead);
-      setGames(gameData || []);
+      const games = gameData || [];
+      setAllGames(games);
+      
+      // Apply favorites filter if active
+      if (showFavoritesOnly) {
+        const favoriteGames = games.filter(game => game.is_favorite);
+        setGames(favoriteGames);
+      } else {
+        setGames(games);
+      }
     } catch (err) {
       setError('Failed to load upcoming games. Please try again.');
       console.error('Error loading upcoming games:', err);
