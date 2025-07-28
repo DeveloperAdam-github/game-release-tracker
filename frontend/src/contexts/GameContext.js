@@ -161,6 +161,7 @@ export const GameProvider = ({ children }) => {
       page_size: 40,
       page: 1
     });
+    // Don't change upcoming mode when clearing filters
   };
 
   // Helper functions for compatibility
