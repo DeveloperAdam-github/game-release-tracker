@@ -46,7 +46,12 @@ const GameDashboard = () => {
   }, [initialized, loadUpcomingGames]);
 
   const handleRetry = () => {
-    loadUpcomingGames(365);
+    if (isUpcomingMode) {
+      loadUpcomingGames(yearFilter);
+    } else {
+      // reload with current filters
+      updateFilters(filters);
+    }
   };
 
   const upcomingCount = getUpcomingGamesCount();
