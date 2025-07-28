@@ -15,6 +15,7 @@ const GameDashboard = () => {
     error,
     viewMode,
     filters,
+    isUpcomingMode,
     updateFilters,
     clearFilters,
     loadUpcomingGames,
@@ -26,7 +27,7 @@ const GameDashboard = () => {
 
   const [initialized, setInitialized] = useState(false);
 
-  // Load upcoming games on component mount
+  // Load upcoming games only once on component mount
   useEffect(() => {
     if (!initialized) {
       loadUpcomingGames(365);
