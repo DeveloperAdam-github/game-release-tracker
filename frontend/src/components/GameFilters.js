@@ -109,7 +109,8 @@ const GameFilters = ({
     selectedGenre !== 'All Genres' ||
     dateRange?.start || 
     dateRange?.end ||
-    showFavoritesOnly;
+    contextShowFavoritesOnly ||
+    (isUpcomingMode && yearFilter !== '2025');
 
   return (
     <Card className="p-6 mb-8 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border-0 shadow-xl">
