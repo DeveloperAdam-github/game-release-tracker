@@ -99,19 +99,21 @@ async def get_upcoming_games(
     try:
         from datetime import datetime, timedelta
         
+        # Always start from today to only show future games
+        today = datetime.now().strftime('%Y-%m-%d')
+        
         # Handle year-based filtering
         if year == "2025":
-            start_date = "2025-01-01"
+            start_date = max(today, "2025-01-01")  # Start from today or 2025-01-01, whichever is later
             end_date = "2025-12-31"
         elif year == "2026":
-            start_date = "2026-01-01"
+            start_date = max(today, "2026-01-01")  # Start from today or 2026-01-01, whichever is later
             end_date = "2026-12-31"
         elif year == "both":
-            start_date = "2025-01-01"
+            start_date = today  # Always start from today
             end_date = "2026-12-31"
         else:
             # Default to current date + days_ahead
-            today = datetime.now().strftime('%Y-%m-%d')
             future_date = (datetime.now() + timedelta(days=days_ahead)).strftime('%Y-%m-%d')
             start_date = today
             end_date = future_date
@@ -127,7 +129,20 @@ async def get_upcoming_games(
         if games is None:
             raise HTTPException(status_code=500, detail="Failed to fetch upcoming games")
         
-        return games
+        # Additional filter to ensure only future games (in case API returns past games)
+        today_date = datetime.now().date()
+        filtered_games = []
+        for game in games:
+            if game.released:
+                try:
+                    game_date = datetime.strptime(game.released, '%Y-%m-%d').date()
+                    if game_date >= today_date:
+                        filtered_games.append(game)
+                except ValueError:
+                    # Skip games with invalid date formats
+                    continue
+        
+        return filtered_games
         
     except HTTPException:
         raise
