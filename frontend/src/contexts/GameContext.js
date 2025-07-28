@@ -221,6 +221,7 @@ export const GameProvider = ({ children }) => {
     error,
     viewMode,
     filters,
+    isUpcomingMode,
     
     // Actions
     setViewMode,
