@@ -80,12 +80,7 @@ export const GameProvider = ({ children }) => {
       setIsUpcomingMode(true);
       setYearFilter(year);
       
-      // Calculate date range based on year
-      const startDate = year === 'both' ? '2025-01-01' : `${year}-01-01`;
-      const endDate = year === 'both' ? '2026-12-31' : `${year}-12-31`;
-      const daysAhead = year === 'both' ? 730 : 365;
-      
-      const gameData = await gameAPI.getUpcomingGames(daysAhead);
+      const gameData = await gameAPI.getUpcomingGames(year);
       const games = gameData || [];
       setAllGames(games);
       
