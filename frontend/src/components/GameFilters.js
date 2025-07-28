@@ -84,7 +84,24 @@ const GameFilters = ({
     setSortBy('released');
     setDateRange({ start: '', end: '' });
     setShowFavoritesOnly(false);
+    contextSetShowFavoritesOnly(false);
     clearFilters();
+  };
+
+  const handleFavoritesToggle = () => {
+    const newValue = !contextShowFavoritesOnly;
+    contextSetShowFavoritesOnly(newValue);
+    if (setShowFavoritesOnly) {
+      setShowFavoritesOnly(newValue);
+    }
+  };
+
+  const handleYearChange = (year) => {
+    setYearFilter(year);
+    if (isUpcomingMode) {
+      const daysAhead = year === 'both' ? 730 : year === '2026' ? 365 : 365;
+      loadUpcomingGames(year);
+    }
   };
 
   const hasActiveFilters = searchTerm || 
