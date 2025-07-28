@@ -268,6 +268,8 @@ export const GameProvider = ({ children }) => {
     viewMode,
     filters,
     isUpcomingMode,
+    showFavoritesOnly,
+    yearFilter,
     
     // Actions
     setViewMode,
@@ -277,6 +279,8 @@ export const GameProvider = ({ children }) => {
     loadUpcomingGames,
     toggleFavorite,
     vote,
+    setShowFavoritesOnly,
+    setYearFilter,
     
     // Helper functions
     isFavorite,
