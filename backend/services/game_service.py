@@ -3,7 +3,7 @@ from models import (
     UserFavorite, UserVote, GameStats, FavoriteCreate, VoteCreate,
     GamesQuery, GameWithUserData, RAWGGame, UserGameData
 )
-from services.rawg_service import rawg_service
+from services.rawg_service import get_rawg_service
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from datetime import datetime
 import logging
@@ -18,6 +18,7 @@ class GameService:
         """Fetch games from RAWG API and enrich with user data"""
         try:
             # Get games from RAWG API
+            rawg_service = get_rawg_service()
             rawg_response = await rawg_service.get_games(query)
             if not rawg_response:
                 return None
