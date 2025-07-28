@@ -151,7 +151,7 @@ export const GameProvider = ({ children }) => {
       genre: 'All Genres',
       dates: '',
       ordering: 'released',
-      page_size: 20,
+      page_size: 40,
       page: 1
     });
   };
