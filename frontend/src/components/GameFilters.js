@@ -202,32 +202,56 @@ const GameFilters = ({
         {showAdvancedFilters && (
           <>
             <Separator />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <Calendar className="h-4 w-4 inline mr-1" />
-                  Release Date From
-                </label>
-                <Input
-                  type="date"
-                  value={dateRange?.start || ''}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Year Filter - only show in upcoming mode */}
+              {isUpcomingMode && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <Calendar className="h-4 w-4 inline mr-1" />
+                    Year Filter
+                  </label>
+                  <Select value={yearFilter} onValueChange={handleYearChange}>
+                    <SelectTrigger className="h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+                      <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2025">2025 Games</SelectItem>
+                      <SelectItem value="2026">2026 Games</SelectItem>
+                      <SelectItem value="both">2025 & 2026</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  <Calendar className="h-4 w-4 inline mr-1" />
-                  Release Date To
-                </label>
-                <Input
-                  type="date"
-                  value={dateRange?.end || ''}
-                  onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
-                />
-              </div>
+              {!isUpcomingMode && (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <Calendar className="h-4 w-4 inline mr-1" />
+                      Release Date From
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateRange?.start || ''}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                      className="h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      <Calendar className="h-4 w-4 inline mr-1" />
+                      Release Date To
+                    </label>
+                    <Input
+                      type="date"
+                      value={dateRange?.end || ''}
+                      onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                      className="h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -235,8 +259,8 @@ const GameFilters = ({
                 </label>
                 <div className="space-y-2">
                   <Button
-                    variant={showFavoritesOnly ? 'default' : 'outline'}
-                    onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                    variant={contextShowFavoritesOnly ? 'default' : 'outline'}
+                    onClick={handleFavoritesToggle}
                     className="w-full h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
                   >
                     ❤️ Favorites Only
