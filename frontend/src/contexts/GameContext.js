@@ -106,7 +106,7 @@ export const GameProvider = ({ children }) => {
 
   const toggleFavorite = async (gameId, gameName) => {
     try {
-      const game = games.find(g => g.id === gameId);
+      const game = allGames.find(g => g.id === gameId);
       if (!game) return;
 
       if (game.is_favorite) {
@@ -115,14 +115,21 @@ export const GameProvider = ({ children }) => {
         await gameAPI.addFavorite(gameId, gameName);
       }
 
-      // Update the game in the local state
-      setGames(prevGames => 
+      // Update the game in both allGames and games
+      const updateGamesFn = (prevGames) => 
         prevGames.map(g => 
           g.id === gameId 
             ? { ...g, is_favorite: !g.is_favorite }
             : g
-        )
-      );
+        );
+
+      setAllGames(updateGamesFn);
+      setGames(updateGamesFn);
+      
+      // Reapply favorites filter if active
+      if (showFavoritesOnly && isUpcomingMode) {
+        setTimeout(() => applyFavoritesFilter(), 100);
+      }
     } catch (err) {
       console.error('Error toggling favorite:', err);
       setError('Failed to update favorite. Please try again.');
