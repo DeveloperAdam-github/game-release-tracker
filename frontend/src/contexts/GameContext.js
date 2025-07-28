@@ -141,7 +141,7 @@ export const GameProvider = ({ children }) => {
   };
 
   const updateFilters = (newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters(prev => ({ ...prev, ...newFilters, page: 1 })); // Reset to page 1 when filters change
   };
 
   const clearFilters = () => {
