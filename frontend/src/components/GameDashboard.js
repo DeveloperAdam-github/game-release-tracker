@@ -118,24 +118,34 @@ const GameDashboard = () => {
 
         {/* Filters */}
         <GameFilters
-          searchTerm={filters.search}
-          setSearchTerm={(search) => updateFilters({ search })}
-          selectedPlatform={filters.platform}
-          setSelectedPlatform={(platform) => updateFilters({ platform })}
-          selectedGenre={filters.genre}
-          setSelectedGenre={(genre) => updateFilters({ genre })}
-          sortBy={filters.ordering}
-          setSortBy={(ordering) => updateFilters({ ordering })}
-          dateRange={filters.dates ? { 
-            start: filters.dates.split(',')[0] || '', 
-            end: filters.dates.split(',')[1] || '' 
-          } : { start: '', end: '' }}
-          setDateRange={(range) => {
-            const dates = range.start && range.end ? `${range.start},${range.end}` : '';
+          searchTerm={localFilters.searchTerm}
+          setSearchTerm={(searchTerm) => {
+            setLocalFilters(prev => ({ ...prev, searchTerm }));
+            updateFilters({ search: searchTerm });
+          }}
+          selectedPlatform={localFilters.selectedPlatform}
+          setSelectedPlatform={(selectedPlatform) => {
+            setLocalFilters(prev => ({ ...prev, selectedPlatform }));
+            updateFilters({ platform: selectedPlatform });
+          }}
+          selectedGenre={localFilters.selectedGenre}
+          setSelectedGenre={(selectedGenre) => {
+            setLocalFilters(prev => ({ ...prev, selectedGenre }));
+            updateFilters({ genre: selectedGenre });
+          }}
+          sortBy={localFilters.sortBy}
+          setSortBy={(sortBy) => {
+            setLocalFilters(prev => ({ ...prev, sortBy }));
+            updateFilters({ ordering: sortBy });
+          }}
+          dateRange={localFilters.dateRange}
+          setDateRange={(dateRange) => {
+            setLocalFilters(prev => ({ ...prev, dateRange }));
+            const dates = dateRange.start && dateRange.end ? `${dateRange.start},${dateRange.end}` : '';
             updateFilters({ dates });
           }}
-          showFavoritesOnly={false}
-          setShowFavoritesOnly={() => {}} // We'll handle this differently with API
+          showFavoritesOnly={showFavoritesOnly}
+          setShowFavoritesOnly={setShowFavoritesOnly}
         />
 
         {/* Error State */}
