@@ -116,7 +116,23 @@ class RAWGService:
                 page_size=40
             )
             
-            return await self.get_games(query)
+            # Get upcoming games and filter out those without release dates or images
+            response = await self.get_games(query)
+            if response and response.results:
+                # Filter games to ensure they have proper data
+                filtered_games = []
+                for game in response.results:
+                    # Only include games with release dates and images
+                    if (game.released and 
+                        game.background_image and 
+                        game.released != "TBA" and 
+                        game.released.strip()):
+                        filtered_games.append(game)
+                
+                response.results = filtered_games
+                response.count = len(filtered_games)
+            
+            return response
             
         except Exception as e:
             logger.error(f"Error fetching upcoming games: {e}")
