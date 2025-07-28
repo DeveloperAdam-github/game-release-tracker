@@ -38,11 +38,12 @@ export const gameAPI = {
   },
 
   // Get upcoming games
-  async getUpcomingGames(daysAhead = 365) {
+  async getUpcomingGames(year = '2025') {
     try {
       const params = {
         user_id: getUserId(),
-        days_ahead: daysAhead
+        year: year,
+        days_ahead: year === 'both' ? 730 : 365
       };
       
       const response = await api.get('/games/upcoming', { params });
