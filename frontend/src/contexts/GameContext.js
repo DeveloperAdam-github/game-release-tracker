@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { gameAPI } from '../services/api';
 
 const GameContext = createContext();
 
@@ -11,77 +12,225 @@ export const useGame = () => {
 };
 
 export const GameProvider = ({ children }) => {
-  const [favorites, setFavorites] = useState([]);
-  const [votes, setVotes] = useState({});
+  const [games, setGames] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+  const [filters, setFilters] = useState({
+    search: '',
+    platform: 'All Platforms',
+    genre: 'All Genres',
+    dates: '',
+    ordering: 'released',
+    page_size: 20,
+    page: 1
+  });
 
-  // Load data from localStorage on mount
+  // Load games when filters change
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('gameFavorites');
-    const savedVotes = localStorage.getItem('gameVotes');
-    
-    if (savedFavorites) {
-      setFavorites(JSON.parse(savedFavorites));
+    loadGames();
+  }, [filters]);
+
+  const loadGames = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const gameData = await gameAPI.getGames(filters);
+      setGames(gameData || []);
+    } catch (err) {
+      setError('Failed to load games. Please try again.');
+      console.error('Error loading games:', err);
+    } finally {
+      setLoading(false);
     }
-    if (savedVotes) {
-      setVotes(JSON.parse(savedVotes));
+  };
+
+  const loadUpcomingGames = async (daysAhead = 365) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const gameData = await gameAPI.getUpcomingGames(daysAhead);
+      setGames(gameData || []);
+    } catch (err) {
+      setError('Failed to load upcoming games. Please try again.');
+      console.error('Error loading upcoming games:', err);
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  };
 
-  // Save favorites to localStorage
-  useEffect(() => {
-    localStorage.setItem('gameFavorites', JSON.stringify(favorites));
-  }, [favorites]);
+  const toggleFavorite = async (gameId, gameName) => {
+    try {
+      const game = games.find(g => g.id === gameId);
+      if (!game) return;
 
-  // Save votes to localStorage
-  useEffect(() => {
-    localStorage.setItem('gameVotes', JSON.stringify(votes));
-  }, [votes]);
-
-  const toggleFavorite = (gameId) => {
-    setFavorites(prev => {
-      if (prev.includes(gameId)) {
-        return prev.filter(id => id !== gameId);
+      if (game.is_favorite) {
+        await gameAPI.removeFavorite(gameId);
       } else {
-        return [...prev, gameId];
+        await gameAPI.addFavorite(gameId, gameName);
       }
+
+      // Update the game in the local state
+      setGames(prevGames => 
+        prevGames.map(g => 
+          g.id === gameId 
+            ? { ...g, is_favorite: !g.is_favorite }
+            : g
+        )
+      );
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+      setError('Failed to update favorite. Please try again.');
+    }
+  };
+
+  const vote = async (gameId, voteType) => {
+    try {
+      await gameAPI.voteGame(gameId, voteType);
+
+      // Update the game in the local state
+      setGames(prevGames => 
+        prevGames.map(g => {
+          if (g.id === gameId) {
+            const updatedGame = { ...g };
+            const currentVote = g.user_vote;
+            
+            if (currentVote === voteType) {
+              // Remove vote
+              updatedGame.user_vote = null;
+              if (g.vote_stats) {
+                if (voteType === 'upvote') {
+                  updatedGame.vote_stats.upvotes = Math.max(0, g.vote_stats.upvotes - 1);
+                } else {
+                  updatedGame.vote_stats.downvotes = Math.max(0, g.vote_stats.downvotes - 1);
+                }
+                updatedGame.vote_stats.total_votes = updatedGame.vote_stats.upvotes + updatedGame.vote_stats.downvotes;
+              }
+            } else {
+              // Add or change vote
+              const prevVote = g.user_vote;
+              updatedGame.user_vote = voteType;
+              
+              if (g.vote_stats) {
+                if (prevVote === 'upvote') {
+                  updatedGame.vote_stats.upvotes = Math.max(0, g.vote_stats.upvotes - 1);
+                } else if (prevVote === 'downvote') {
+                  updatedGame.vote_stats.downvotes = Math.max(0, g.vote_stats.downvotes - 1);
+                }
+                
+                if (voteType === 'upvote') {
+                  updatedGame.vote_stats.upvotes += 1;
+                } else {
+                  updatedGame.vote_stats.downvotes += 1;
+                }
+                updatedGame.vote_stats.total_votes = updatedGame.vote_stats.upvotes + updatedGame.vote_stats.downvotes;
+              }
+            }
+            
+            return updatedGame;
+          }
+          return g;
+        })
+      );
+    } catch (err) {
+      console.error('Error voting on game:', err);
+      setError('Failed to record vote. Please try again.');
+    }
+  };
+
+  const updateFilters = (newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      platform: 'All Platforms',
+      genre: 'All Genres',
+      dates: '',
+      ordering: 'released',
+      page_size: 20,
+      page: 1
     });
   };
 
-  const vote = (gameId, voteType) => {
-    setVotes(prev => ({
-      ...prev,
-      [gameId]: voteType
-    }));
+  // Helper functions for compatibility
+  const isFavorite = (gameId) => {
+    const game = games.find(g => g.id === gameId);
+    return game ? game.is_favorite : false;
+  };
+
+  const getUserVote = (gameId) => {
+    const game = games.find(g => g.id === gameId);
+    return game ? game.user_vote : null;
   };
 
   const getVoteCount = (gameId, voteType) => {
-    // Mock vote counts for demonstration
-    const baseCounts = {
-      upvotes: Math.floor(Math.random() * 1000) + 100,
-      downvotes: Math.floor(Math.random() * 200) + 10
-    };
+    const game = games.find(g => g.id === gameId);
+    if (!game || !game.vote_stats) return 0;
     
-    const currentVote = votes[gameId];
-    if (currentVote === voteType) {
-      return baseCounts[voteType + 's'] + 1;
-    }
-    return baseCounts[voteType + 's'];
+    return voteType === 'upvote' 
+      ? game.vote_stats.upvotes 
+      : game.vote_stats.downvotes;
   };
 
-  const isFavorite = (gameId) => favorites.includes(gameId);
-  const getUserVote = (gameId) => votes[gameId] || null;
+  const getFavoriteGames = () => {
+    return games.filter(game => game.is_favorite);
+  };
+
+  const getUpcomingGamesCount = () => {
+    const today = new Date();
+    return games.filter(game => {
+      if (!game.released) return false;
+      const releaseDate = new Date(game.released);
+      return releaseDate > today;
+    }).length;
+  };
+
+  const getAverageRating = () => {
+    const gamesWithRating = games.filter(game => game.rating && game.rating > 0);
+    if (gamesWithRating.length === 0) return 0;
+    
+    const sum = gamesWithRating.reduce((acc, game) => acc + game.rating, 0);
+    return (sum / gamesWithRating.length).toFixed(1);
+  };
+
+  const getTotalVotes = () => {
+    return games.reduce((total, game) => {
+      if (game.vote_stats) {
+        return total + game.vote_stats.total_votes;
+      }
+      return total;
+    }, 0);
+  };
 
   const value = {
-    favorites,
-    votes,
+    // State
+    games,
+    loading,
+    error,
     viewMode,
+    filters,
+    
+    // Actions
     setViewMode,
+    updateFilters,
+    clearFilters,
+    loadGames,
+    loadUpcomingGames,
     toggleFavorite,
     vote,
-    getVoteCount,
+    
+    // Helper functions
     isFavorite,
-    getUserVote
+    getUserVote,
+    getVoteCount,
+    getFavoriteGames,
+    getUpcomingGamesCount,
+    getAverageRating,
+    getTotalVotes
   };
 
   return (
