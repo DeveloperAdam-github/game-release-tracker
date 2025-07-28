@@ -63,7 +63,19 @@ const GameFilters = ({
   setShowFavoritesOnly
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const { viewMode, setViewMode, filters, updateFilters, clearFilters } = useGame();
+  const { 
+    viewMode, 
+    setViewMode, 
+    filters, 
+    updateFilters, 
+    clearFilters, 
+    isUpcomingMode,
+    showFavoritesOnly: contextShowFavoritesOnly,
+    setShowFavoritesOnly: contextSetShowFavoritesOnly,
+    yearFilter,
+    setYearFilter,
+    loadUpcomingGames
+  } = useGame();
 
   const handleClearFilters = () => {
     setSearchTerm('');
