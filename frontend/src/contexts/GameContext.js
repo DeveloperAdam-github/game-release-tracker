@@ -231,10 +231,17 @@ export const GameProvider = ({ children }) => {
 
   const getUpcomingGamesCount = () => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
+    
     return games.filter(game => {
       if (!game.released) return false;
-      const releaseDate = new Date(game.released);
-      return releaseDate > today;
+      try {
+        const releaseDate = new Date(game.released);
+        releaseDate.setHours(0, 0, 0, 0); // Reset to start of day
+        return releaseDate >= today;
+      } catch (error) {
+        return false;
+      }
     }).length;
   };
 
