@@ -92,19 +92,34 @@ async def get_games(
 @api_router.get("/games/upcoming")
 async def get_upcoming_games(
     user_id: str = Query(default="anonymous"),
-    days_ahead: int = Query(365, ge=1, le=730, description="Days to look ahead")
+    days_ahead: int = Query(365, ge=1, le=1095, description="Days to look ahead (max 3 years)"),
+    year: str = Query("2025", description="Year filter: 2025, 2026, or both")
 ):
-    """Get upcoming games for the next specified days"""
+    """Get upcoming games for the next specified days or specific year"""
     try:
         from datetime import datetime, timedelta
         
-        today = datetime.now().strftime('%Y-%m-%d')
-        future_date = (datetime.now() + timedelta(days=days_ahead)).strftime('%Y-%m-%d')
+        # Handle year-based filtering
+        if year == "2025":
+            start_date = "2025-01-01"
+            end_date = "2025-12-31"
+        elif year == "2026":
+            start_date = "2026-01-01"
+            end_date = "2026-12-31"
+        elif year == "both":
+            start_date = "2025-01-01"
+            end_date = "2026-12-31"
+        else:
+            # Default to current date + days_ahead
+            today = datetime.now().strftime('%Y-%m-%d')
+            future_date = (datetime.now() + timedelta(days=days_ahead)).strftime('%Y-%m-%d')
+            start_date = today
+            end_date = future_date
         
         query = GamesQuery(
-            dates=f"{today},{future_date}",
+            dates=f"{start_date},{end_date}",
             ordering='released',
-            page_size=40
+            page_size=60  # Increased to get more games
         )
         
         games = await game_service.get_games_with_user_data(query, user_id)
