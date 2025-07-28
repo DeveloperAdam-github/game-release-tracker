@@ -39,6 +39,7 @@ export const GameProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
+      setIsUpcomingMode(false); // Switch out of upcoming mode
       
       const gameData = await gameAPI.getGames(filters);
       setGames(gameData || []);
@@ -54,6 +55,7 @@ export const GameProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
+      setIsUpcomingMode(true); // Set upcoming mode
       
       const gameData = await gameAPI.getUpcomingGames(daysAhead);
       setGames(gameData || []);
