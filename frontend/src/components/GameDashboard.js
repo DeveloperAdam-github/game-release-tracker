@@ -16,9 +16,12 @@ const GameDashboard = () => {
     viewMode,
     filters,
     isUpcomingMode,
+    showFavoritesOnly,
+    yearFilter,
     updateFilters,
     clearFilters,
     loadUpcomingGames,
+    setShowFavoritesOnly,
     getFavoriteGames,
     getUpcomingGamesCount,
     getAverageRating,
@@ -26,11 +29,18 @@ const GameDashboard = () => {
   } = useGame();
 
   const [initialized, setInitialized] = useState(false);
+  const [localFilters, setLocalFilters] = useState({
+    searchTerm: '',
+    selectedPlatform: 'All Platforms',
+    selectedGenre: 'All Genres',
+    sortBy: 'released',
+    dateRange: { start: '', end: '' }
+  });
 
   // Load upcoming games only once on component mount
   useEffect(() => {
     if (!initialized) {
-      loadUpcomingGames(365);
+      loadUpcomingGames('2025');
       setInitialized(true);
     }
   }, [initialized, loadUpcomingGames]);
