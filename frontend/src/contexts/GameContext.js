@@ -135,45 +135,52 @@ export const GameProvider = ({ children }) => {
     try {
       await gameAPI.voteGame(gameId, voteType);
 
-      // Update the game in both allGames and games
+      // Update the game in both allGames and games with simpler logic
       const updateGamesFn = (prevGames) =>
         prevGames.map(g => {
           if (g.id === gameId) {
             const updatedGame = { ...g };
             const currentVote = g.user_vote;
             
+            // Initialize vote_stats if not present
+            if (!updatedGame.vote_stats) {
+              updatedGame.vote_stats = {
+                game_id: gameId,
+                upvotes: 0,
+                downvotes: 0,
+                total_votes: 0,
+                updated_at: new Date().toISOString()
+              };
+            }
+
             if (currentVote === voteType) {
-              // Remove vote
+              // Remove vote - user clicked same vote type
               updatedGame.user_vote = null;
-              if (g.vote_stats) {
-                if (voteType === 'upvote') {
-                  updatedGame.vote_stats.upvotes = Math.max(0, g.vote_stats.upvotes - 1);
-                } else {
-                  updatedGame.vote_stats.downvotes = Math.max(0, g.vote_stats.downvotes - 1);
-                }
-                updatedGame.vote_stats.total_votes = updatedGame.vote_stats.upvotes + updatedGame.vote_stats.downvotes;
+              if (voteType === 'upvote') {
+                updatedGame.vote_stats.upvotes = Math.max(0, updatedGame.vote_stats.upvotes - 1);
+              } else {
+                updatedGame.vote_stats.downvotes = Math.max(0, updatedGame.vote_stats.downvotes - 1);
               }
             } else {
-              // Add or change vote
-              const prevVote = g.user_vote;
-              updatedGame.user_vote = voteType;
+              // Add new vote or change existing vote
+              if (currentVote === 'upvote') {
+                // Remove previous upvote
+                updatedGame.vote_stats.upvotes = Math.max(0, updatedGame.vote_stats.upvotes - 1);
+              } else if (currentVote === 'downvote') {
+                // Remove previous downvote
+                updatedGame.vote_stats.downvotes = Math.max(0, updatedGame.vote_stats.downvotes - 1);
+              }
               
-              if (g.vote_stats) {
-                if (prevVote === 'upvote') {
-                  updatedGame.vote_stats.upvotes = Math.max(0, g.vote_stats.upvotes - 1);
-                } else if (prevVote === 'downvote') {
-                  updatedGame.vote_stats.downvotes = Math.max(0, g.vote_stats.downvotes - 1);
-                }
-                
-                if (voteType === 'upvote') {
-                  updatedGame.vote_stats.upvotes += 1;
-                } else {
-                  updatedGame.vote_stats.downvotes += 1;
-                }
-                updatedGame.vote_stats.total_votes = updatedGame.vote_stats.upvotes + updatedGame.vote_stats.downvotes;
+              // Add new vote
+              updatedGame.user_vote = voteType;
+              if (voteType === 'upvote') {
+                updatedGame.vote_stats.upvotes += 1;
+              } else {
+                updatedGame.vote_stats.downvotes += 1;
               }
             }
             
+            updatedGame.vote_stats.total_votes = updatedGame.vote_stats.upvotes + updatedGame.vote_stats.downvotes;
             return updatedGame;
           }
           return g;
