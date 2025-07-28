@@ -16,6 +16,7 @@ export const GameProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
+  const [isUpcomingMode, setIsUpcomingMode] = useState(true); // Track if we're showing upcoming games
   const [filters, setFilters] = useState({
     search: '',
     platform: 'All Platforms',
@@ -26,10 +27,13 @@ export const GameProvider = ({ children }) => {
     page: 1
   });
 
-  // Load games when filters change
+  // Only load games when filters actually change (not on initial load)
   useEffect(() => {
-    loadGames();
-  }, [filters]);
+    // Don't auto-load on mount if we're in upcoming mode
+    if (!isUpcomingMode) {
+      loadGames();
+    }
+  }, [filters, isUpcomingMode]);
 
   const loadGames = async () => {
     try {
