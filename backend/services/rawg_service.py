@@ -12,7 +12,8 @@ class RAWGService:
         self.base_url = "https://api.rawg.io/api"
         
         if not self.api_key:
-            raise ValueError("RAWG_API_KEY environment variable is required")
+            logger.warning("RAWG_API_KEY environment variable not found, using fallback")
+            self.api_key = "4f4b5e6a94974419966803f6036df26b"  # Fallback to provided key
     
     async def get_games(self, query: GamesQuery) -> Optional[RAWGGamesResponse]:
         """Fetch games from RAWG API with filters"""
@@ -137,5 +138,11 @@ class RAWGService:
             logger.error(f"Error searching games: {e}")
             return None
 
-# Global instance
-rawg_service = RAWGService()
+# Create service instance - will be initialized when imported
+rawg_service = None
+
+def get_rawg_service():
+    global rawg_service
+    if rawg_service is None:
+        rawg_service = RAWGService()
+    return rawg_service
