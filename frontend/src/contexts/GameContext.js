@@ -140,8 +140,8 @@ export const GameProvider = ({ children }) => {
     try {
       await gameAPI.voteGame(gameId, voteType);
 
-      // Update the game in the local state
-      setGames(prevGames => 
+      // Update the game in both allGames and games
+      const updateGamesFn = (prevGames) =>
         prevGames.map(g => {
           if (g.id === gameId) {
             const updatedGame = { ...g };
@@ -182,8 +182,10 @@ export const GameProvider = ({ children }) => {
             return updatedGame;
           }
           return g;
-        })
-      );
+        });
+
+      setAllGames(updateGamesFn);
+      setGames(updateGamesFn);
     } catch (err) {
       console.error('Error voting on game:', err);
       setError('Failed to record vote. Please try again.');
