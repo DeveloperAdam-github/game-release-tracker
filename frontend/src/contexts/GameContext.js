@@ -13,10 +13,13 @@ export const useGame = () => {
 
 export const GameProvider = ({ children }) => {
   const [games, setGames] = useState([]);
+  const [allGames, setAllGames] = useState([]); // Store all games for filtering
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
-  const [isUpcomingMode, setIsUpcomingMode] = useState(true); // Track if we're showing upcoming games
+  const [isUpcomingMode, setIsUpcomingMode] = useState(true);
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+  const [yearFilter, setYearFilter] = useState('2025'); // New year filter
   const [filters, setFilters] = useState({
     search: '',
     platform: 'All Platforms',
@@ -34,6 +37,13 @@ export const GameProvider = ({ children }) => {
       loadGames();
     }
   }, [filters, isUpcomingMode]);
+
+  // Apply favorites filter whenever showFavoritesOnly or allGames changes
+  useEffect(() => {
+    if (isUpcomingMode && allGames.length > 0) {
+      applyFavoritesFilter();
+    }
+  }, [showFavoritesOnly, allGames, isUpcomingMode]);
 
   const loadGames = async () => {
     try {
