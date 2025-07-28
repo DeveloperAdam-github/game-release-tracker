@@ -113,12 +113,13 @@ class GameService:
                 'game_id': vote_data.game_id
             })
             
+            result_vote = None
+            
             if existing:
                 if existing['vote_type'] == vote_data.vote_type:
                     # Same vote - remove it
                     await self.db.votes.delete_one({'_id': existing['_id']})
-                    await self.update_game_stats(vote_data.game_id)
-                    return None
+                    result_vote = None
                 else:
                     # Different vote - update it
                     await self.db.votes.update_one(
@@ -130,18 +131,24 @@ class GameService:
                             }
                         }
                     )
-                    vote = UserVote(**existing)
-                    vote.vote_type = vote_data.vote_type
-                    vote.updated_at = datetime.utcnow()
+                    result_vote = UserVote(
+                        id=existing['id'],
+                        user_id=vote_data.user_id,
+                        game_id=vote_data.game_id,
+                        vote_type=vote_data.vote_type,
+                        created_at=existing['created_at'],
+                        updated_at=datetime.utcnow()
+                    )
             else:
                 # New vote
                 vote = UserVote(**vote_data.dict())
                 await self.db.votes.insert_one(vote.dict())
+                result_vote = vote
             
-            # Update game statistics
+            # Update game statistics after vote change
             await self.update_game_stats(vote_data.game_id)
             
-            return vote
+            return result_vote
             
         except Exception as e:
             logger.error(f"Error voting on game: {e}")
