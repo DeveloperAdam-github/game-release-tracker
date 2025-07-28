@@ -298,19 +298,25 @@ const GameFilters = ({
                 </Badge>
               )}
               
-              {dateRange?.start && (
+              {isUpcomingMode && yearFilter !== '2025' && (
+                <Badge variant="secondary" className="animate-in fade-in duration-300">
+                  Year: {yearFilter === 'both' ? '2025 & 2026' : yearFilter}
+                </Badge>
+              )}
+              
+              {!isUpcomingMode && dateRange?.start && (
                 <Badge variant="secondary" className="animate-in fade-in duration-300">
                   From: {dateRange.start}
                 </Badge>
               )}
               
-              {dateRange?.end && (
+              {!isUpcomingMode && dateRange?.end && (
                 <Badge variant="secondary" className="animate-in fade-in duration-300">
                   To: {dateRange.end}
                 </Badge>
               )}
               
-              {showFavoritesOnly && (
+              {contextShowFavoritesOnly && (
                 <Badge variant="secondary" className="animate-in fade-in duration-300">
                   ❤️ Favorites Only
                 </Badge>
