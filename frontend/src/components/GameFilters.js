@@ -7,7 +7,46 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { useGame } from '../contexts/GameContext';
-import { platforms, genres, sortOptions } from '../mock';
+
+// Available options based on RAWG API
+const platforms = [
+  'All Platforms',
+  'PC',
+  'PlayStation 5',
+  'Xbox Series S/X',
+  'Nintendo Switch',
+  'PlayStation 4',
+  'Xbox One',
+  'iOS',
+  'Android'
+];
+
+const genres = [
+  'All Genres',
+  'Action',
+  'Adventure',
+  'RPG',
+  'Shooter',
+  'Platformer',
+  'Racing',
+  'Sports',
+  'Strategy',
+  'Simulation',
+  'Puzzle',
+  'Arcade',
+  'Fighting',
+  'Casual',
+  'Indie'
+];
+
+const sortOptions = [
+  { value: 'released', label: 'Release Date' },
+  { value: 'name', label: 'Name' },
+  { value: '-rating', label: 'Rating (High to Low)' },
+  { value: 'rating', label: 'Rating (Low to High)' },
+  { value: '-metacritic', label: 'Metacritic Score' },
+  { value: '-created', label: 'Recently Added' }
+];
 
 const GameFilters = ({ 
   searchTerm, 
@@ -24,22 +63,23 @@ const GameFilters = ({
   setShowFavoritesOnly
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  const { viewMode, setViewMode } = useGame();
+  const { viewMode, setViewMode, filters, updateFilters, clearFilters } = useGame();
 
-  const clearFilters = () => {
+  const handleClearFilters = () => {
     setSearchTerm('');
     setSelectedPlatform('All Platforms');
     setSelectedGenre('All Genres');
-    setSortBy('release_date');
+    setSortBy('released');
     setDateRange({ start: '', end: '' });
     setShowFavoritesOnly(false);
+    clearFilters();
   };
 
   const hasActiveFilters = searchTerm || 
     selectedPlatform !== 'All Platforms' || 
     selectedGenre !== 'All Genres' ||
-    dateRange.start || 
-    dateRange.end ||
+    dateRange?.start || 
+    dateRange?.end ||
     showFavoritesOnly;
 
   return (
@@ -140,7 +180,7 @@ const GameFilters = ({
                 </label>
                 <Input
                   type="date"
-                  value={dateRange.start}
+                  value={dateRange?.start || ''}
                   onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
                   className="h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
                 />
@@ -153,7 +193,7 @@ const GameFilters = ({
                 </label>
                 <Input
                   type="date"
-                  value={dateRange.end}
+                  value={dateRange?.end || ''}
                   onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
                   className="h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
                 />
@@ -161,15 +201,17 @@ const GameFilters = ({
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Quick Filters
+                  Quick Actions
                 </label>
-                <Button
-                  variant={showFavoritesOnly ? 'default' : 'outline'}
-                  onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-                  className="w-full h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
-                >
-                  ❤️ Favorites Only
-                </Button>
+                <div className="space-y-2">
+                  <Button
+                    variant={showFavoritesOnly ? 'default' : 'outline'}
+                    onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                    className="w-full h-12 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
+                  >
+                    ❤️ Favorites Only
+                  </Button>
+                </div>
               </div>
             </div>
           </>
@@ -202,6 +244,18 @@ const GameFilters = ({
                 </Badge>
               )}
               
+              {dateRange?.start && (
+                <Badge variant="secondary" className="animate-in fade-in duration-300">
+                  From: {dateRange.start}
+                </Badge>
+              )}
+              
+              {dateRange?.end && (
+                <Badge variant="secondary" className="animate-in fade-in duration-300">
+                  To: {dateRange.end}
+                </Badge>
+              )}
+              
               {showFavoritesOnly && (
                 <Badge variant="secondary" className="animate-in fade-in duration-300">
                   ❤️ Favorites Only
@@ -211,7 +265,7 @@ const GameFilters = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={clearFilters}
+                onClick={handleClearFilters}
                 className="ml-auto hover:bg-red-100 hover:text-red-600 transition-colors duration-200"
               >
                 <Filter className="h-4 w-4 mr-1" />

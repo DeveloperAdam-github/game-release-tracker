@@ -7,35 +7,53 @@ import { useGame } from '../contexts/GameContext';
 import { useToast } from '../hooks/use-toast';
 
 const GameCard = ({ game, viewMode = 'grid' }) => {
-  const { toggleFavorite, vote, getVoteCount, isFavorite, getUserVote } = useGame();
+  const { toggleFavorite, vote, isFavorite, getUserVote, getVoteCount } = useGame();
   const { toast } = useToast();
   const [imageLoaded, setImageLoaded] = useState(false);
   
-  const releaseDate = new Date(game.released);
-  const isUpcoming = releaseDate > new Date();
-  const daysUntilRelease = Math.ceil((releaseDate - new Date()) / (1000 * 60 * 60 * 24));
+  const releaseDate = game.released ? new Date(game.released) : null;
+  const isUpcoming = releaseDate && releaseDate > new Date();
+  const daysUntilRelease = releaseDate ? Math.ceil((releaseDate - new Date()) / (1000 * 60 * 60 * 24)) : 0;
   
-  const handleFavoriteToggle = (e) => {
+  const handleFavoriteToggle = async (e) => {
     e.preventDefault();
-    toggleFavorite(game.id);
-    toast({
-      title: isFavorite(game.id) ? "Removed from favorites" : "Added to favorites",
-      description: `${game.name} ${isFavorite(game.id) ? 'removed from' : 'added to'} your favorites list.`,
-      duration: 2000,
-    });
+    try {
+      await toggleFavorite(game.id, game.name);
+      toast({
+        title: isFavorite(game.id) ? "Removed from favorites" : "Added to favorites",
+        description: `${game.name} ${isFavorite(game.id) ? 'removed from' : 'added to'} your favorites list.`,
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update favorites. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
   };
 
-  const handleVote = (voteType, e) => {
+  const handleVote = async (voteType, e) => {
     e.preventDefault();
-    const currentVote = getUserVote(game.id);
-    const newVote = currentVote === voteType ? null : voteType;
-    vote(game.id, newVote);
-    
-    toast({
-      title: newVote ? `Voted ${voteType}` : 'Vote removed',
-      description: `Your ${voteType} vote for ${game.name} has been ${newVote ? 'recorded' : 'removed'}.`,
-      duration: 2000,
-    });
+    try {
+      const currentVote = getUserVote(game.id);
+      await vote(game.id, voteType);
+      
+      const newVote = currentVote === voteType ? null : voteType;
+      toast({
+        title: newVote ? `Voted ${voteType}` : 'Vote removed',
+        description: `Your ${voteType} vote for ${game.name} has been ${newVote ? 'recorded' : 'removed'}.`,
+        duration: 2000,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to record vote. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
   };
 
   const handleShare = (e) => {
@@ -43,7 +61,7 @@ const GameCard = ({ game, viewMode = 'grid' }) => {
     if (navigator.share) {
       navigator.share({
         title: game.name,
-        text: `Check out ${game.name} releasing on ${releaseDate.toLocaleDateString()}!`,
+        text: `Check out ${game.name}${releaseDate ? ` releasing on ${releaseDate.toLocaleDateString()}` : ''}!`,
         url: window.location.href,
       });
     } else {
@@ -56,6 +74,13 @@ const GameCard = ({ game, viewMode = 'grid' }) => {
     }
   };
 
+  // Get platforms safely
+  const platforms = game.platforms || [];
+  const genres = game.genres || [];
+  
+  // Get default image if none provided
+  const gameImage = game.background_image || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=400&fit=crop';
+
   if (viewMode === 'list') {
     return (
       <Card className="overflow-hidden hover:shadow-2xl transition-all duration-500 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border-0 shadow-lg group">
@@ -63,18 +88,22 @@ const GameCard = ({ game, viewMode = 'grid' }) => {
           <div className="flex">
             <div className="relative w-48 h-32 overflow-hidden">
               <img
-                src={game.background_image}
+                src={gameImage}
                 alt={game.name}
                 className={`w-full h-full object-cover transition-all duration-700 group-hover:scale-110 ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}
                 onLoad={() => setImageLoaded(true)}
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=400&fit=crop';
+                  setImageLoaded(true);
+                }}
               />
               {!imageLoaded && (
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-200 to-blue-200 animate-pulse" />
               )}
               
-              {isUpcoming && (
+              {isUpcoming && daysUntilRelease > 0 && (
                 <div className="absolute top-2 left-2">
                   <Badge className="bg-green-500 hover:bg-green-600 text-white shadow-lg">
                     <Clock className="h-3 w-3 mr-1" />
@@ -91,25 +120,33 @@ const GameCard = ({ game, viewMode = 'grid' }) => {
                 </h3>
                 
                 <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {releaseDate.toLocaleDateString()}
-                  </div>
+                  {releaseDate && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {releaseDate.toLocaleDateString()}
+                    </div>
+                  )}
                   {game.metacritic && (
                     <div className="flex items-center gap-1">
                       <Star className="h-4 w-4 text-yellow-500" />
                       {game.metacritic}
                     </div>
                   )}
+                  {game.rating && (
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-blue-500" fill="currentColor" />
+                      {game.rating.toFixed(1)}
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
-                  {game.platforms?.slice(0, 3).map((platform, index) => (
+                  {platforms.slice(0, 3).map((platform, index) => (
                     <Badge key={index} variant="outline" className="text-xs">
                       {platform.platform.name}
                     </Badge>
                   ))}
-                  {game.genres?.slice(0, 2).map((genre, index) => (
+                  {genres.slice(0, 2).map((genre, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
                       {genre.name}
                     </Badge>
@@ -173,12 +210,16 @@ const GameCard = ({ game, viewMode = 'grid' }) => {
       <CardContent className="p-0">
         <div className="relative overflow-hidden">
           <img
-            src={game.background_image}
+            src={gameImage}
             alt={game.name}
             className={`w-full h-48 object-cover transition-all duration-700 group-hover:scale-110 ${
               imageLoaded ? 'opacity-100' : 'opacity-0'
             }`}
             onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              e.target.src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=400&fit=crop';
+              setImageLoaded(true);
+            }}
           />
           {!imageLoaded && (
             <div className="absolute inset-0 bg-gradient-to-br from-purple-200 to-blue-200 animate-pulse" />
@@ -186,7 +227,7 @@ const GameCard = ({ game, viewMode = 'grid' }) => {
           
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           
-          {isUpcoming && (
+          {isUpcoming && daysUntilRelease > 0 && (
             <div className="absolute top-3 left-3">
               <Badge className="bg-green-500 hover:bg-green-600 text-white shadow-lg animate-pulse">
                 <Clock className="h-3 w-3 mr-1" />
@@ -222,43 +263,65 @@ const GameCard = ({ game, viewMode = 'grid' }) => {
         
         <div className="p-6 space-y-4">
           <div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-purple-600 transition-colors">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-purple-600 transition-colors line-clamp-2">
               {game.name}
             </h3>
             
             <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-3">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {releaseDate.toLocaleDateString()}
-              </div>
-              {game.metacritic && (
+              {releaseDate && (
                 <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 text-yellow-500" />
-                  <span className="font-semibold">{game.metacritic}</span>
+                  <Calendar className="h-4 w-4" />
+                  {releaseDate.toLocaleDateString()}
                 </div>
               )}
+              <div className="flex items-center gap-3">
+                {game.metacritic && (
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-yellow-500" />
+                    <span className="font-semibold">{game.metacritic}</span>
+                  </div>
+                )}
+                {game.rating && (
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 text-blue-500" fill="currentColor" />
+                    <span className="font-semibold">{game.rating.toFixed(1)}</span>
+                  </div>
+                )}
+              </div>
             </div>
             
-            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
-              {game.description}
-            </p>
+            {game.description_raw && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+                {game.description_raw.substring(0, 120)}...
+              </p>
+            )}
           </div>
           
           <div className="space-y-3">
             <div className="flex flex-wrap gap-1">
-              {game.platforms?.slice(0, 3).map((platform, index) => (
+              {platforms.slice(0, 3).map((platform, index) => (
                 <Badge key={index} variant="outline" className="text-xs">
                   {platform.platform.name}
                 </Badge>
               ))}
+              {platforms.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{platforms.length - 3}
+                </Badge>
+              )}
             </div>
             
             <div className="flex flex-wrap gap-1">
-              {game.genres?.slice(0, 3).map((genre, index) => (
+              {genres.slice(0, 3).map((genre, index) => (
                 <Badge key={index} variant="secondary" className="text-xs">
                   {genre.name}
                 </Badge>
               ))}
+              {genres.length > 3 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{genres.length - 3}
+                </Badge>
+              )}
             </div>
           </div>
           
@@ -297,6 +360,7 @@ const GameCard = ({ game, viewMode = 'grid' }) => {
               variant="ghost"
               size="sm"
               className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 transition-all duration-300"
+              onClick={() => window.open(`https://rawg.io/games/${game.slug}`, '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-1" />
               Details
